@@ -1,5 +1,6 @@
 var chart1;
 var chart2;
+var ws;
 
 var lastGC = 0;
 var lastTotalAllocated = 0;
@@ -80,11 +81,8 @@ function requestData() {
 	$.ajax({
 		url: "/debug/charts/data",
 		success: function(data) {
-
 			updateGC(data);
 			updateMemAllocated(data);
-
-			setTimeout(requestData, 10000);
 		},
 		cache: false
 	});
@@ -93,6 +91,10 @@ function requestData() {
 function loadCallback() {
 	setTimeout(requestData, 100);
 }
+
+$(window).unload(function() {
+	ws.close();
+});
 
 $(document).ready(function() {
 	var conf = $.extend(true, {}, areaConfDefault);
@@ -117,4 +119,20 @@ $(document).ready(function() {
 	chart2 = new Highcharts.Chart(conf);
 
 	var conf = $.extend(true, {}, areaConfDefault);
+
+	function wsurl() {
+		var l = window.location;
+		return ((l.protocol === "https:") ? "wss://" : "ws://") + l.hostname + (((l.port != 80) && (l.port != 443)) ? ":" + l.port : "") + "/debug/charts/data-feed";
+	}
+
+	ws = new WebSocket(wsurl());
+	ws.onopen = function () {
+		ws.onmessage = function (evt) {
+			var data = JSON.parse(evt.data);
+			if (data.GcPause != 0) {
+				chart1.series[0].addPoint([data.Ts, data.GcPause], true);
+			}
+			chart2.series[0].addPoint([data.Ts, data.BytesAllocated], true);
+		}
+	}
 })
