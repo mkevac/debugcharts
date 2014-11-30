@@ -1,7 +1,7 @@
 debugcharts
 ===========
 
-Charts for Go debug data
+Go memory debug charts.
 
 This package uses chart library [Highcharts](http://www.highcharts.com/). It is free for personal and non-commercial use. Please buy a license otherwise.
 
@@ -15,3 +15,5 @@ Just install package and start http server. There is an example program [here](h
 
 Then go to `http://localhost:8080/debug/charts`. You should see something like this:
 <img src="example/screenshot.png" />
+
+Data is updated every second. Web interface is updated automatically every 10 seconds. We keep data for last day.
