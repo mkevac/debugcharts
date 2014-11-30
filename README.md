@@ -16,4 +16,4 @@ Just install package and start http server. There is an example program [here](h
 Then go to `http://localhost:8080/debug/charts`. You should see something like this:
 <img src="example/screenshot.png" />
 
-Data is updated every second. Web interface is updated automatically every 10 seconds. We keep data for last day.
+Data is updated every second. We keep data for last day.
