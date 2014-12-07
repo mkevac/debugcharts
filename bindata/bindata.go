@@ -1,4 +1,4 @@
-package debugcharts
+package bindata
 
 import (
 	"bytes"

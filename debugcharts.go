@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/mkevac/debugcharts/bindata"
 )
 
 type update struct {
@@ -215,7 +216,7 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 
 func handleAsset(path string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := Asset(path)
+		data, err := bindata.Asset(path)
 		if err != nil {
 			log.Fatal(err)
 		}
