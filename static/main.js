@@ -64,7 +64,7 @@ var areaConfDefault = {
 function updateGC(data) {
 	var res = [];
 	for (var i=0; i<data.GcPauses.length; i++) {
-		res.push([data.GcPauses[i].T, data.GcPauses[i].C])
+		res.push([data.GcPauses[i].T*1000, data.GcPauses[i].C])
 	}
 	chart1.series[0].setData(res, true);
 }
@@ -72,7 +72,7 @@ function updateGC(data) {
 function updateMemAllocated(data) {
 	var res = [];
 	for (var i=0; i<data.BytesAllocated.length; i++) {
-		res.push([data.BytesAllocated[i].T, data.BytesAllocated[i].C])
+		res.push([data.BytesAllocated[i].T*1000, data.BytesAllocated[i].C])
 	}
 	chart2.series[0].setData(res, true);
 }
@@ -97,6 +97,13 @@ $(window).unload(function() {
 });
 
 $(document).ready(function() {
+	var x = new Date();
+	Highcharts.setOptions({
+		global: {
+			timezoneOffset: x.getTimezoneOffset()
+		}
+	});
+
 	var conf = $.extend(true, {}, areaConfDefault);
 
 	conf.chart.renderTo = 'container1';
@@ -130,9 +137,9 @@ $(document).ready(function() {
 		ws.onmessage = function (evt) {
 			var data = JSON.parse(evt.data);
 			if (data.GcPause != 0) {
-				chart1.series[0].addPoint([data.Ts, data.GcPause], true);
+				chart1.series[0].addPoint([data.Ts*1000, data.GcPause], true);
 			}
-			chart2.series[0].addPoint([data.Ts, data.BytesAllocated], true);
+			chart2.series[0].addPoint([data.Ts*1000, data.BytesAllocated], true);
 		}
 	}
 })
