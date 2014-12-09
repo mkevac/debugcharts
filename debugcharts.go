@@ -1,3 +1,20 @@
+// Simple live charts for memory consumption and GC pauses.
+//
+// To use debugcharts, link this package into your program:
+//	import _ "github.com/mkevac/debugcharts"
+//
+// If your application is not already running an http server, you
+// need to start one.  Add "net/http" and "log" to your imports and
+// the following code to your main function:
+//
+// 	go func() {
+// 		log.Println(http.ListenAndServe("localhost:6060", nil))
+// 	}()
+//
+// Then go look at charts:
+//
+//	http://localhost:6060/debug/charts
+//
 package debugcharts
 
 import (
