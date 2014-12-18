@@ -119,6 +119,11 @@ func init() {
 	http.HandleFunc("/debug/charts/", handleAsset("static/index.html"))
 	http.HandleFunc("/debug/charts/main.js", handleAsset("static/main.js"))
 
+	// preallocate arrays in data, helps save on reallocations caused by append()
+	// when maxCount is large
+	data.BytesAllocated = make([]timestampedDatum, 0, maxCount)
+	data.GcPauses = make([]timestampedDatum, 0, maxCount)
+
 	go s.gatherData()
 }
 
