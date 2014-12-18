@@ -213,7 +213,6 @@ func (s *server) dataFeedHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			now := time.Now()
 			if err := conn.WriteControl(websocket.PingMessage, nil, now.Add(time.Second)); err != nil {
-				log.Println(err)
 				return
 			}
 			lastPing = now
