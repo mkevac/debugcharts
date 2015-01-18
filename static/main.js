@@ -1,131 +1,105 @@
 var chart1;
 var chart2;
-var ws;
 
-var lastGC = 0;
-var lastTotalAllocated = 0;
-
-var areaConfDefault = {
-	chart: {
-		type: 'spline',
-		renderTo: 'container2',
-		zoomType: 'x',
-	},
-	loading: {
-		labelStyle: {
-			top: '45%'
-		}
-	},
-	title: {
-		text: 'Memory in use'
-	},
-	subtitle: {
-		text: document.ontouchstart === undefined ?
-			'Click and drag in the plot area to zoom in' :
-			'Pinch the chart to zoom in'
-	},
-	yAxis: {
-		title: {
-			text: 'bytes'
-		}
-	},
-	legend: {
-		enabled: false
-	},
-	plotOptions: {
-		area: {
-			fillColor: {
-				linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
-				stops: [
-					[0, Highcharts.getOptions().colors[0]],
-					[1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
-				]
-			},
-			marker: {
-				radius: 2
-			},
-			lineWidth: 1,
-			states: {
-				hover: {
-					lineWidth: 1
-				}
-			},
-			threshold: null
-		}
-	},
-
-	series: [{
-		type: 'area',
-		name: 'Memory in use',
-		data: [],
-	}]
-}
-
-function updateGC(data) {
-	var res = [];
-	for (var i=0; i<data.GcPauses.length; i++) {
-		res.push([data.GcPauses[i].T*1000, data.GcPauses[i].C])
-	}
-	chart1.series[0].setData(res, true);
-}
-
-function updateMemAllocated(data) {
-	var res = [];
-	for (var i=0; i<data.BytesAllocated.length; i++) {
-		res.push([data.BytesAllocated[i].T*1000, data.BytesAllocated[i].C])
-	}
-	chart2.series[0].setData(res, true);
-}
-
-function requestData() {
-	$.ajax({
-		url: "/debug/charts/data",
-		success: function(data) {
-			updateGC(data);
-			updateMemAllocated(data);
-		},
-		cache: false
-	});
-}
-
-function loadCallback() {
-	setTimeout(requestData, 100);
-}
-
-$(window).unload(function() {
-	ws.close();
-});
-
-$(document).ready(function() {
+$(function() {
 	var x = new Date();
+
 	Highcharts.setOptions({
 		global: {
 			timezoneOffset: x.getTimezoneOffset()
 		}
+	})
+
+	$.getJSON('/debug/charts/data?callback=?', function(data) {
+		chart1 = new Highcharts.StockChart({
+			chart: {
+				renderTo: 'container1',
+				zoomType: 'x'
+			},
+			title: {
+				text: 'GC pauses'
+			},
+			yAxis: {
+				title: {
+					text: 'Nanoseconds'
+				}
+			},
+			scrollbar: {
+				enabled: false
+			},
+			rangeSelector: {
+				buttons: [{
+					type: 'second',
+					count: 5,
+					text: '5s'
+				}, {
+					type: 'second',
+					count: 30,
+					text: '30s'
+				}, {
+					type: 'minute',
+					count: 1,
+					text: '1m'
+				}, {
+					type: 'all',
+					text: 'All'
+				}],
+				selected: 3
+			},
+			series: [{
+				name: "GC pauses",
+				data: data.GcPauses,
+				type: 'area',
+				tooltip: {
+					valueSuffix: 'ns'
+				}
+			}]
+		});
+		chart2 = new Highcharts.StockChart({
+			chart: {
+				renderTo: 'container2',
+				zoomType: 'x'
+			},
+			title: {
+				text: 'Memory allocated'
+			},
+			yAxis: {
+				title: {
+					text: 'Bytes'
+				}
+			},
+			scrollbar: {
+				enabled: false
+			},
+			rangeSelector: {
+				buttons: [{
+					type: 'second',
+					count: 5,
+					text: '5s'
+				}, {
+					type: 'second',
+					count: 30,
+					text: '30s'
+				}, {
+					type: 'minute',
+					count: 1,
+					text: '1m'
+				}, {
+					type: 'all',
+					text: 'All'
+				}],
+				selected: 3
+			},
+			series: [{
+				name: "Allocated",
+				data: data.BytesAllocated,
+				type: 'area',
+				tooltip: {
+					valueSuffix: 'b'
+				}
+			}]
+		})
 	});
-
-	var conf = $.extend(true, {}, areaConfDefault);
-
-	conf.chart.renderTo = 'container1';
-	conf.chart.events = {load: loadCallback};
-	conf.title.text = 'GC pauses';
-	conf.yAxis.title.text = 'nanoseconds';
-	conf.xAxis = {type: 'datetime'};
-	conf.series[0].name = 'GC pauses';
-
-	chart1 = new Highcharts.Chart(conf);
-
-	var conf = $.extend(true, {}, areaConfDefault);
-
-	conf.chart.renderTo = 'container2';
-	conf.title.text = 'Memory in use';
-	conf.yAxis.title.text = 'bytes';
-	conf.xAxis = {type: 'datetime'};
-	conf.series[0].name = 'Memory in use';
-
-	chart2 = new Highcharts.Chart(conf);
-
-	var conf = $.extend(true, {}, areaConfDefault);
 
 	function wsurl() {
 		var l = window.location;
@@ -137,9 +111,9 @@ $(document).ready(function() {
 		ws.onmessage = function (evt) {
 			var data = JSON.parse(evt.data);
 			if (data.GcPause != 0) {
-				chart1.series[0].addPoint([data.Ts*1000, data.GcPause], true);
+				chart1.series[0].addPoint([data.Ts, data.GcPause], true);
 			}
-			chart2.series[0].addPoint([data.Ts*1000, data.BytesAllocated], true);
+			chart2.series[0].addPoint([data.Ts, data.BytesAllocated], true);
 		}
-	}
+	};
 })

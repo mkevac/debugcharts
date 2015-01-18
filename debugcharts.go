@@ -19,6 +19,7 @@ package debugcharts
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"runtime"
@@ -45,14 +46,9 @@ type server struct {
 	consumersMutex sync.RWMutex
 }
 
-type timestampedDatum struct {
-	Count uint64 `json:"C"`
-	Ts    int64  `json:"T"`
-}
-
-type exportedData struct {
-	BytesAllocated []timestampedDatum
-	GcPauses       []timestampedDatum
+type DataStorage struct {
+	BytesAllocated [][]uint64
+	GcPauses       [][]uint64
 }
 
 const (
@@ -60,7 +56,7 @@ const (
 )
 
 var (
-	data           exportedData
+	data           DataStorage
 	lastPause      uint32
 	mutex          sync.RWMutex
 	lastConsumerId uint
@@ -83,18 +79,18 @@ func (s *server) gatherData() {
 			runtime.ReadMemStats(&ms)
 
 			u := update{
-				Ts: nowUnix,
+				Ts: nowUnix * 1000,
 			}
 
 			mutex.Lock()
 
 			bytesAllocated := ms.Alloc
 			u.BytesAllocated = bytesAllocated
-			data.BytesAllocated = append(data.BytesAllocated, timestampedDatum{Count: bytesAllocated, Ts: nowUnix})
+			data.BytesAllocated = append(data.BytesAllocated, []uint64{uint64(nowUnix) * 1000, bytesAllocated})
 			if lastPause == 0 || lastPause != ms.NumGC {
 				gcPause := ms.PauseNs[(ms.NumGC+255)%256]
 				u.GcPause = gcPause
-				data.GcPauses = append(data.GcPauses, timestampedDatum{Count: gcPause, Ts: nowUnix})
+				data.GcPauses = append(data.GcPauses, []uint64{uint64(nowUnix) * 1000, gcPause})
 				lastPause = ms.NumGC
 			}
 
@@ -121,8 +117,8 @@ func init() {
 
 	// preallocate arrays in data, helps save on reallocations caused by append()
 	// when maxCount is large
-	data.BytesAllocated = make([]timestampedDatum, 0, maxCount)
-	data.GcPauses = make([]timestampedDatum, 0, maxCount)
+	data.BytesAllocated = make([][]uint64, 0, maxCount)
+	data.GcPauses = make([][]uint64, 0, maxCount)
 
 	go s.gatherData()
 }
@@ -229,10 +225,20 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	mutex.RLock()
 	defer mutex.RUnlock()
 
+	if e := r.ParseForm(); e != nil {
+		log.Fatalln("error pardsing form")
+	}
+
+	callback := r.FormValue("callback")
+
+	fmt.Fprintf(w, "%v(", callback)
+
 	w.Header().Set("Content-Type", "application/json")
 
 	encoder := json.NewEncoder(w)
 	encoder.Encode(data)
+
+	fmt.Fprint(w, ")")
 }
 
 func handleAsset(path string) func(http.ResponseWriter, *http.Request) {
