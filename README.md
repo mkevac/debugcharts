@@ -1,4 +1,4 @@
-debugcharts
+debugcharts [![Build Status](https://travis-ci.org/mkevac/debugcharts.svg?branch=master)](https://travis-ci.org/mkevac/debugcharts)
 ===========
 
 Go memory debug charts.
