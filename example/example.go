@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 	"time"
 
 	_ "net/http/pprof"
@@ -12,21 +14,17 @@ import (
 )
 
 func dummyAllocations() {
-	type t struct {
-		a uint64
-		b map[uint64][]byte
-	}
-	d := make([]t, 0, 0)
+	var d []uint64
 
 	for {
-		select {
-		case <-time.Tick(time.Second * 20):
-			d = make([]t, 0, 0)
-			log.Println(len(d))
-		case <-time.Tick(time.Second * 8):
-			d = make([]t, 500000, 500000)
-			log.Println(len(d))
+		for i := 0; i < 2*1024*1024; i++ {
+			d = append(d, 42)
 		}
+		time.Sleep(time.Second * 10)
+		fmt.Println(len(d))
+		d = make([]uint64, 0)
+		runtime.GC()
+		time.Sleep(time.Second * 10)
 	}
 }
 
