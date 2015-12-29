@@ -26,7 +26,7 @@ func GinDebugRouter(router gin.IRouter) {
 	{
 		charts.GET("/data-feed", ginDataFeedHandler)
 		charts.GET("/data", ginDataHandler)
-		charts.GET("", ginHandleAsset("static/index.html"))
+		charts.GET("/", ginHandleAsset("static/index.html"))
 		charts.GET("/main.js", ginHandleAsset("static/main.js"))
 	}
 }
