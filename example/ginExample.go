@@ -2,16 +2,15 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"time"
 
 	_ "net/http/pprof"
 
-	"github.com/gorilla/handlers"
-	_ "github.com/mkevac/debugcharts"
+	"github.com/gin-gonic/gin"
+	"github.com/aiwuTech/debugcharts"
 )
 
-func dummyAllocations() {
+func ginDummyAllocations() {
 	type t struct {
 		a uint64
 		b map[uint64][]byte
@@ -31,7 +30,11 @@ func dummyAllocations() {
 }
 
 func main() {
-	go dummyAllocations()
-	log.Fatal(http.ListenAndServe(":8080", handlers.CompressHandler(http.DefaultServeMux)))
+	go ginDummyAllocations()
+
+	router := gin.Default()
+	debugcharts.GinDebugRouter(router)
+
+	log.Fatal(router.Run(":8088"))
 }
 
