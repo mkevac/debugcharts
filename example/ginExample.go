@@ -7,7 +7,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/gin-gonic/gin"
-	"github.com/aiwuTech/debugcharts"
+	"github.com/mkevac/debugcharts"
 )
 
 func ginDummyAllocations() {
@@ -37,4 +37,3 @@ func main() {
 
 	log.Fatal(router.Run(":8088"))
 }
-
