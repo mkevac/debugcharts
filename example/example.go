@@ -32,3 +32,4 @@ func main() {
 	go dummyAllocations()
 	log.Fatal(http.ListenAndServe(":8080", handlers.CompressHandler(http.DefaultServeMux)))
 }
+
