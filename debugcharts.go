@@ -77,6 +77,7 @@ func (s *server) gatherData() {
 
 			var ms runtime.MemStats
 			runtime.ReadMemStats(&ms)
+			fmt.Println("marko", ms.Alloc)
 
 			u := update{
 				Ts: nowUnix * 1000,
@@ -114,6 +115,9 @@ func init() {
 	http.HandleFunc("/debug/charts/data", dataHandler)
 	http.HandleFunc("/debug/charts/", handleAsset("static/index.html"))
 	http.HandleFunc("/debug/charts/main.js", handleAsset("static/main.js"))
+	http.HandleFunc("/debug/charts/jquery.js", handleAsset("static/jquery.js"))
+	http.HandleFunc("/debug/charts/jquery.flot.js", handleAsset("static/jquery.flot.js"))
+	http.HandleFunc("/debug/charts/jquery.flot.time.js", handleAsset("static/jquery.flot.time.js"))
 
 	// preallocate arrays in data, helps save on reallocations caused by append()
 	// when maxCount is large

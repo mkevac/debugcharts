@@ -3,102 +3,33 @@ var chart2;
 
 $(function() {
 	var x = new Date();
-
-	Highcharts.setOptions({
-		global: {
-			timezoneOffset: x.getTimezoneOffset()
-		}
-	})
+	var BytesAllocated = [];
+	var GcPauses = [];
 
 	$.getJSON('/debug/charts/data?callback=?', function(data) {
-		chart1 = new Highcharts.StockChart({
-			chart: {
-				renderTo: 'container1',
-				zoomType: 'x'
+		BytesAllocated = data.BytesAllocated;
+		GcPauses = data.GcPauses;
+
+		chart1 = $.plot("#container1", [GcPauses], {
+			series: {
+				lines: {show: true},
+				points: {show: true},
+				shadowSize: 0
 			},
-			title: {
-				text: 'GC pauses'
-			},
-			yAxis: {
-				title: {
-					text: 'Nanoseconds'
-				}
-			},
-			scrollbar: {
-				enabled: false
-			},
-			rangeSelector: {
-				buttons: [{
-					type: 'second',
-					count: 5,
-					text: '5s'
-				}, {
-					type: 'second',
-					count: 30,
-					text: '30s'
-				}, {
-					type: 'minute',
-					count: 1,
-					text: '1m'
-				}, {
-					type: 'all',
-					text: 'All'
-				}],
-				selected: 3
-			},
-			series: [{
-				name: "GC pauses",
-				data: data.GcPauses,
-				type: 'area',
-				tooltip: {
-					valueSuffix: 'ns'
-				}
-			}]
+			xaxis: {
+				mode: "time"
+			}
 		});
-		chart2 = new Highcharts.StockChart({
-			chart: {
-				renderTo: 'container2',
-				zoomType: 'x'
+		chart2 = $.plot("#container2", [BytesAllocated], {
+			series: {
+				lines: {show: true},
+				points: {show: true},
+				shadowSize: 0
 			},
-			title: {
-				text: 'Memory allocated'
-			},
-			yAxis: {
-				title: {
-					text: 'Bytes'
-				}
-			},
-			scrollbar: {
-				enabled: false
-			},
-			rangeSelector: {
-				buttons: [{
-					type: 'second',
-					count: 5,
-					text: '5s'
-				}, {
-					type: 'second',
-					count: 30,
-					text: '30s'
-				}, {
-					type: 'minute',
-					count: 1,
-					text: '1m'
-				}, {
-					type: 'all',
-					text: 'All'
-				}],
-				selected: 3
-			},
-			series: [{
-				name: "Allocated",
-				data: data.BytesAllocated,
-				type: 'area',
-				tooltip: {
-					valueSuffix: 'b'
-				}
-			}]
-		})
+			xaxis: {
+				mode: "time"
+			}
+		});
 	});
 
 	function wsurl() {
@@ -110,10 +41,18 @@ $(function() {
 	ws.onopen = function () {
 		ws.onmessage = function (evt) {
 			var data = JSON.parse(evt.data);
+
 			if (data.GcPause != 0) {
-				chart1.series[0].addPoint([data.Ts, data.GcPause], true);
+				GcPauses.push([data.Ts, data.GcPause]);
+				chart1.setData([GcPauses]);
+				chart1.setupGrid();
+				chart1.draw();
 			}
-			chart2.series[0].addPoint([data.Ts, data.BytesAllocated], true);
+
+			BytesAllocated.push([data.Ts, data.BytesAllocated]);
+			chart2.setData([BytesAllocated]);
+			chart2.setupGrid();
+			chart2.draw();
 		}
 	};
 })
