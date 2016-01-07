@@ -114,6 +114,8 @@ func init() {
 	http.HandleFunc("/debug/charts/data", dataHandler)
 	http.HandleFunc("/debug/charts/", handleAsset("static/index.html"))
 	http.HandleFunc("/debug/charts/main.js", handleAsset("static/main.js"))
+	http.HandleFunc("/debug/charts/jquery-2.1.4.min.js", handleAsset("static/jquery-2.1.4.min.js"))
+	http.HandleFunc("/debug/charts/moment.min.js", handleAsset("static/moment.min.js"))
 
 	// preallocate arrays in data, helps save on reallocations caused by append()
 	// when maxCount is large

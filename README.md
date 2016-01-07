@@ -3,7 +3,7 @@ debugcharts [![Build Status](https://travis-ci.org/mkevac/debugcharts.svg?branch
 
 Go memory debug charts.
 
-This package uses chart library [Highcharts](http://www.highcharts.com/). It is free for personal and non-commercial use. Please buy a license otherwise.
+This package uses [Plotly](https://github.com/plotly/plotly.js) chart library. It is open source and free for use.
 
 Installation
 ------------

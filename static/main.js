@@ -1,104 +1,43 @@
 var chart1;
 var chart2;
+var chart2Div = document.getElementById('container2');
 
-$(function() {
-	var x = new Date();
+$(function () {
 
-	Highcharts.setOptions({
-		global: {
-			timezoneOffset: x.getTimezoneOffset()
+	$.getJSON('/debug/charts/data?callback=?', function (data) {
+		var pDataChart1 = [{
+			x: [],
+			y: [],
+			type: "scatter"
+		}];
+		for (i = 0; i < data.GcPauses.length; i++) {
+			var d = moment(data.GcPauses[i][0]).format('HH:mm:ss');
+			pDataChart1[0].x.push(d);
+			pDataChart1[0].y.push(data.GcPauses[i][1]);
 		}
-	})
+		chart1 = Plotly.newPlot('container1', pDataChart1, {
+            title: "GC Pauses",
+            yaxis: {
+                title: "Nanoseconds"
+            }
+        });
 
-	$.getJSON('/debug/charts/data?callback=?', function(data) {
-		chart1 = new Highcharts.StockChart({
-			chart: {
-				renderTo: 'container1',
-				zoomType: 'x'
-			},
-			title: {
-				text: 'GC pauses'
-			},
-			yAxis: {
-				title: {
-					text: 'Nanoseconds'
-				}
-			},
-			scrollbar: {
-				enabled: false
-			},
-			rangeSelector: {
-				buttons: [{
-					type: 'second',
-					count: 5,
-					text: '5s'
-				}, {
-					type: 'second',
-					count: 30,
-					text: '30s'
-				}, {
-					type: 'minute',
-					count: 1,
-					text: '1m'
-				}, {
-					type: 'all',
-					text: 'All'
-				}],
-				selected: 3
-			},
-			series: [{
-				name: "GC pauses",
-				data: data.GcPauses,
-				type: 'area',
-				tooltip: {
-					valueSuffix: 'ns'
-				}
-			}]
-		});
-		chart2 = new Highcharts.StockChart({
-			chart: {
-				renderTo: 'container2',
-				zoomType: 'x'
-			},
-			title: {
-				text: 'Memory allocated'
-			},
-			yAxis: {
-				title: {
-					text: 'Bytes'
-				}
-			},
-			scrollbar: {
-				enabled: false
-			},
-			rangeSelector: {
-				buttons: [{
-					type: 'second',
-					count: 5,
-					text: '5s'
-				}, {
-					type: 'second',
-					count: 30,
-					text: '30s'
-				}, {
-					type: 'minute',
-					count: 1,
-					text: '1m'
-				}, {
-					type: 'all',
-					text: 'All'
-				}],
-				selected: 3
-			},
-			series: [{
-				name: "Allocated",
-				data: data.BytesAllocated,
-				type: 'area',
-				tooltip: {
-					valueSuffix: 'b'
-				}
-			}]
-		})
+		var pDataChart2 = [{
+			x: [],
+			y: [],
+			type: "scatter"
+		}];
+		for (i = 0; i < data.BytesAllocated.length; i++) {
+			var d = moment(data.BytesAllocated[i][0]).format('HH:mm:ss');
+			pDataChart2[0].x.push(d);
+			pDataChart2[0].y.push(data.BytesAllocated[i][1]);
+		}
+		chart2 = Plotly.newPlot('container2', pDataChart2, {
+            title: "Memory Allocated",
+            yaxis: {
+                title: "Bytes"
+            }
+        });
 	});
 
 	function wsurl() {
@@ -110,10 +49,11 @@ $(function() {
 	ws.onopen = function () {
 		ws.onmessage = function (evt) {
 			var data = JSON.parse(evt.data);
+            var d = moment(data.Ts).format('HH:mm:ss');
 			if (data.GcPause != 0) {
-				chart1.series[0].addPoint([data.Ts, data.GcPause], true);
+                Plotly.extendTraces('container1', {x:[[d]],y:[[data.GcPause]]}, [0], 86400);
 			}
-			chart2.series[0].addPoint([data.Ts, data.BytesAllocated], true);
+            Plotly.extendTraces('container2', {x:[[d]],y:[[data.BytesAllocated]]}, [0], 86400);
 		}
 	};
 })
