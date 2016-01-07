@@ -22,18 +22,22 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/mkevac/debugcharts/bindata"
+	"github.com/shirou/gopsutil/process"
 )
 
 type update struct {
 	Ts             int64
 	BytesAllocated uint64
 	GcPause        uint64
+	CpuUser        float64
+	CpuSys         float64
 }
 
 type consumer struct {
@@ -46,9 +50,21 @@ type server struct {
 	consumersMutex sync.RWMutex
 }
 
+type SimplePair struct {
+	Ts    uint64
+	Value uint64
+}
+
+type CPUPair struct {
+	Ts   uint64
+	User float64
+	Sys  float64
+}
+
 type DataStorage struct {
-	BytesAllocated [][]uint64
-	GcPauses       [][]uint64
+	BytesAllocated []SimplePair
+	GcPauses       []SimplePair
+	CpuUsage       []CPUPair
 }
 
 const (
@@ -65,6 +81,9 @@ var (
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
+	prevSysTime  float64
+	prevUserTime float64
+	myProcess    *process.Process
 )
 
 func (s *server) gatherData() {
@@ -82,15 +101,26 @@ func (s *server) gatherData() {
 				Ts: nowUnix * 1000,
 			}
 
+			cpuTimes, _ := myProcess.CPUTimes()
+
+			if prevUserTime != 0 {
+				u.CpuUser = cpuTimes.User - prevUserTime
+				u.CpuSys = cpuTimes.System - prevSysTime
+				data.CpuUsage = append(data.CpuUsage, CPUPair{uint64(nowUnix) * 1000, u.CpuUser, u.CpuSys})
+			}
+
+			prevUserTime = cpuTimes.User
+			prevSysTime = cpuTimes.System
+
 			mutex.Lock()
 
 			bytesAllocated := ms.Alloc
 			u.BytesAllocated = bytesAllocated
-			data.BytesAllocated = append(data.BytesAllocated, []uint64{uint64(nowUnix) * 1000, bytesAllocated})
+			data.BytesAllocated = append(data.BytesAllocated, SimplePair{uint64(nowUnix) * 1000, bytesAllocated})
 			if lastPause == 0 || lastPause != ms.NumGC {
 				gcPause := ms.PauseNs[(ms.NumGC+255)%256]
 				u.GcPause = gcPause
-				data.GcPauses = append(data.GcPauses, []uint64{uint64(nowUnix) * 1000, gcPause})
+				data.GcPauses = append(data.GcPauses, SimplePair{uint64(nowUnix) * 1000, gcPause})
 				lastPause = ms.NumGC
 			}
 
@@ -117,10 +147,13 @@ func init() {
 	http.HandleFunc("/debug/charts/jquery-2.1.4.min.js", handleAsset("static/jquery-2.1.4.min.js"))
 	http.HandleFunc("/debug/charts/moment.min.js", handleAsset("static/moment.min.js"))
 
+	myProcess, _ = process.NewProcess(int32(os.Getpid()))
+
 	// preallocate arrays in data, helps save on reallocations caused by append()
 	// when maxCount is large
-	data.BytesAllocated = make([][]uint64, 0, maxCount)
-	data.GcPauses = make([][]uint64, 0, maxCount)
+	data.BytesAllocated = make([]SimplePair, 0, maxCount)
+	data.GcPauses = make([]SimplePair, 0, maxCount)
+	data.CpuUsage = make([]CPUPair, 0, maxCount)
 
 	go s.gatherData()
 }

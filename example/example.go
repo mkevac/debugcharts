@@ -13,6 +13,15 @@ import (
 	_ "github.com/mkevac/debugcharts"
 )
 
+func dummyCPUUsage() {
+	var a uint64
+	var t time.Time = time.Now()
+	for {
+		t = time.Now()
+		a += uint64(t.Unix())
+	}
+}
+
 func dummyAllocations() {
 	var d []uint64
 
@@ -30,6 +39,6 @@ func dummyAllocations() {
 
 func main() {
 	go dummyAllocations()
+	go dummyCPUUsage()
 	log.Fatal(http.ListenAndServe(":8080", handlers.CompressHandler(http.DefaultServeMux)))
 }
-

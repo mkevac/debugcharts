@@ -1,20 +1,27 @@
 var chart1;
 var chart2;
-var chart2Div = document.getElementById('container2');
+var chart3;
+
+function stackedArea(traces) {
+    for(var i=1; i<traces.length; i++) {
+        for(var j=0; j<(Math.min(traces[i]['y'].length, traces[i-1]['y'].length)); j++) {
+            traces[i]['y'][j] += traces[i-1]['y'][j];
+        }
+    }
+    return traces;
+}
 
 $(function () {
 
 	$.getJSON('/debug/charts/data?callback=?', function (data) {
-		var pDataChart1 = [{
-			x: [],
-			y: [],
-			type: "scatter"
-		}];
+		var pDataChart1 = [{x: [], y: [], type: "scatter"}];
+        
 		for (i = 0; i < data.GcPauses.length; i++) {
-			var d = moment(data.GcPauses[i][0]).format('HH:mm:ss');
+			var d = moment(data.GcPauses[i].Ts).format('HH:mm:ss');
 			pDataChart1[0].x.push(d);
-			pDataChart1[0].y.push(data.GcPauses[i][1]);
+			pDataChart1[0].y.push(data.GcPauses[i].Value);
 		}
+        
 		chart1 = Plotly.newPlot('container1', pDataChart1, {
             title: "GC Pauses",
             yaxis: {
@@ -22,20 +29,42 @@ $(function () {
             }
         });
 
-		var pDataChart2 = [{
-			x: [],
-			y: [],
-			type: "scatter"
-		}];
+		var pDataChart2 = [{x: [], y: [], type: "scatter"}];
+        
 		for (i = 0; i < data.BytesAllocated.length; i++) {
-			var d = moment(data.BytesAllocated[i][0]).format('HH:mm:ss');
+			var d = moment(data.BytesAllocated[i].Ts).format('HH:mm:ss');
 			pDataChart2[0].x.push(d);
-			pDataChart2[0].y.push(data.BytesAllocated[i][1]);
+			pDataChart2[0].y.push(data.BytesAllocated[i].Value);
 		}
+        
 		chart2 = Plotly.newPlot('container2', pDataChart2, {
             title: "Memory Allocated",
             yaxis: {
                 title: "Bytes"
+            }
+        });
+        
+        var pDataChart3 = [
+            {x: [], y: [], fill: 'tozeroy', name: 'sys', hoverinfo: 'none'},
+            {x: [], y: [], fill: 'tonexty', name: 'user', hoverinfo: 'none'}
+        ];
+        
+		for (i = 0; i < data.CpuUsage.length; i++) {
+			var d = moment(data.CpuUsage[i].Ts).format('HH:mm:ss');
+			pDataChart3[1].x.push(d);
+            pDataChart3[0].x.push(d);
+            pDataChart3[1].y.push(data.CpuUsage[i].User);
+            pDataChart3[0].y.push(data.CpuUsage[i].Sys);
+		}
+        
+        console.log(pDataChart3);
+        pDataChart3 = stackedArea(pDataChart3);
+        console.log(pDataChart3);
+        
+		chart3 = Plotly.newPlot('container3', pDataChart3, {
+            title: "CPU Usage",
+            yaxis: {
+                title: "Seconds"
             }
         });
 	});
@@ -54,6 +83,7 @@ $(function () {
                 Plotly.extendTraces('container1', {x:[[d]],y:[[data.GcPause]]}, [0], 86400);
 			}
             Plotly.extendTraces('container2', {x:[[d]],y:[[data.BytesAllocated]]}, [0], 86400);
+            Plotly.extendTraces('container3', {x:[[d], [d]],y:[[data.CpuSys], [data.CpuUser]]}, [0, 1], 86400);
 		}
 	};
 })
