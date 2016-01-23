@@ -17,3 +17,15 @@ Then go to `http://localhost:8080/debug/charts`. You should see something like t
 <img src="example/screenshot.png" />
 
 Data is updated every second. We keep data for last day.
+
+User https://github.com/dgryski/ proposed interesing way for turning debugcharts on/off for your project:
+
+You can add tagged file like this in your code 
+```
+// +build debugcharts
+
+package main
+
+import _ "github.com/mkevac/debugcharts"
+```
+If you want to use debugcharts, then build your project with `-tags debugcharts`
