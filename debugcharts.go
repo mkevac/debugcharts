@@ -261,7 +261,8 @@ func dataHandler(w http.ResponseWriter, r *http.Request) {
 	defer mutex.RUnlock()
 
 	if e := r.ParseForm(); e != nil {
-		log.Fatalln("error pardsing form")
+		log.Print("error parsing form")
+		return
 	}
 
 	callback := r.FormValue("callback")
@@ -280,16 +281,19 @@ func handleAsset(path string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := bindata.Asset(path)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
+			return
 		}
 
 		n, err := w.Write(data)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
+			return
 		}
 
 		if n != len(data) {
-			log.Fatal("wrote less than supposed to")
+			log.Print("wrote less than supposed to")
+			return
 		}
 	}
 }
