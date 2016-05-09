@@ -101,7 +101,7 @@ func (s *server) gatherData() {
 				Ts: nowUnix * 1000,
 			}
 
-			cpuTimes, _ := myProcess.CPUTimes()
+			cpuTimes, _ := myProcess.Times()
 
 			if prevUserTime != 0 {
 				u.CpuUser = cpuTimes.User - prevUserTime
