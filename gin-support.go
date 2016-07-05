@@ -1,9 +1,10 @@
 package debugcharts
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/mkevac/debugcharts/bindata"
-	"log"
 )
 
 func GinDebugRouter(router gin.IRouter) {
@@ -13,6 +14,8 @@ func GinDebugRouter(router gin.IRouter) {
 		charts.GET("/data", ginDataHandler)
 		charts.GET("/", ginHandleAsset("static/index.html"))
 		charts.GET("/main.js", ginHandleAsset("static/main.js"))
+		charts.GET("jquery-2.1.4.min.js", ginHandleAsset("static/jquery-2.1.4.min.js"))
+		charts.GET("moment.min.js", ginHandleAsset("static/moment.min.js"))
 	}
 }
 

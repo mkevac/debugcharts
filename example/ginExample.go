@@ -35,5 +35,5 @@ func main() {
 	router := gin.Default()
 	debugcharts.GinDebugRouter(router)
 
-	log.Fatal(router.Run(":8088"))
+	log.Fatal(router.Run(":8080"))
 }
