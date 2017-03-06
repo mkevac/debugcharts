@@ -29,6 +29,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/mkevac/debugcharts/bindata"
+	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/process"
 )
 
@@ -101,7 +102,10 @@ func (s *server) gatherData() {
 				Ts: nowUnix * 1000,
 			}
 
-			cpuTimes, _ := myProcess.Times()
+			cpuTimes, err := myProcess.Times()
+			if err != nil {
+				cpuTimes = &cpu.TimesStat{}
+			}
 
 			if prevUserTime != 0 {
 				u.CpuUser = cpuTimes.User - prevUserTime
