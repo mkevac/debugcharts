@@ -159,6 +159,16 @@ func init() {
 	data.GcPauses = make([]SimplePair, 0, maxCount)
 	data.CpuUsage = make([]CPUPair, 0, maxCount)
 
+	/* Prepare some data for testing
+	num := int64(100)
+	for i := int64(0); i < num; i++ {
+		ts := (time.Now().Unix() - (num - i)) * 1000
+		data.BytesAllocated = append(data.BytesAllocated, SimplePair{uint64(ts), rand.Uint64()})
+		data.GcPauses = append(data.GcPauses, SimplePair{uint64(ts), rand.Uint64()})
+		data.CpuUsage = append(data.CpuUsage, CPUPair{uint64(ts), rand.Float64(), rand.Float64()})
+	}
+	*/
+
 	go s.gatherData()
 }
 
