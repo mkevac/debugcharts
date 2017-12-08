@@ -147,7 +147,10 @@ func init() {
 	http.HandleFunc("/debug/charts/data-feed", s.dataFeedHandler)
 	http.HandleFunc("/debug/charts/data", dataHandler)
 	http.HandleFunc("/debug/charts/", handleAsset("static/index.html"))
-	http.HandleFunc("/debug/charts/main.js", handleAsset("static/main.js"))
+	http.HandleFunc("/debug/charts/history/", handleAsset("static/history.html"))
+	http.HandleFunc("/debug/charts/realtime/", handleAsset("static/realtime.html"))
+	http.HandleFunc("/debug/charts/history.js", handleAsset("static/history.js"))
+	http.HandleFunc("/debug/charts/realtime.js", handleAsset("static/realtime.js"))
 	http.HandleFunc("/debug/charts/jquery-2.1.4.min.js", handleAsset("static/jquery-2.1.4.min.js"))
 	http.HandleFunc("/debug/charts/moment.min.js", handleAsset("static/moment.min.js"))
 
