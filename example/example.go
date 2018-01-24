@@ -15,7 +15,7 @@ import (
 
 func dummyCPUUsage() {
 	var a uint64
-	var t time.Time = time.Now()
+	var t = time.Now()
 	for {
 		t = time.Now()
 		a += uint64(t.Unix())
@@ -40,5 +40,9 @@ func dummyAllocations() {
 func main() {
 	go dummyAllocations()
 	go dummyCPUUsage()
-	log.Fatal(http.ListenAndServe(":8080", handlers.CompressHandler(http.DefaultServeMux)))
+	go func() {
+		log.Fatal(http.ListenAndServe(":8080", handlers.CompressHandler(http.DefaultServeMux)))
+	}()
+	log.Printf("you can now open http://localhost:8080/debug/charts/ in your browser")
+	select {}
 }
