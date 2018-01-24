@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"sync"
 	"time"
 
@@ -37,8 +38,13 @@ type update struct {
 	Ts             int64
 	BytesAllocated uint64
 	GcPause        uint64
-	CpuUser        float64
-	CpuSys         float64
+	CPUUser        float64
+	CPUSys         float64
+	Block          int
+	Goroutine      int
+	Heap           int
+	Mutex          int
+	Threadcreate   int
 }
 
 type consumer struct {
@@ -62,10 +68,20 @@ type CPUPair struct {
 	Sys  float64
 }
 
+type PprofPair struct {
+	Ts           uint64
+	Block        int
+	Goroutine    int
+	Heap         int
+	Mutex        int
+	Threadcreate int
+}
+
 type DataStorage struct {
 	BytesAllocated []SimplePair
 	GcPauses       []SimplePair
-	CpuUsage       []CPUPair
+	CPUUsage       []CPUPair
+	Pprof          []PprofPair
 }
 
 const (
@@ -76,7 +92,7 @@ var (
 	data           DataStorage
 	lastPause      uint32
 	mutex          sync.RWMutex
-	lastConsumerId uint
+	lastConsumerID uint
 	s              server
 	upgrader       = websocket.Upgrader{
 		ReadBufferSize:  1024,
@@ -99,8 +115,21 @@ func (s *server) gatherData() {
 			runtime.ReadMemStats(&ms)
 
 			u := update{
-				Ts: nowUnix * 1000,
+				Ts:           nowUnix * 1000,
+				Block:        pprof.Lookup("block").Count(),
+				Goroutine:    pprof.Lookup("goroutine").Count(),
+				Heap:         pprof.Lookup("heap").Count(),
+				Mutex:        pprof.Lookup("mutex").Count(),
+				Threadcreate: pprof.Lookup("threadcreate").Count(),
 			}
+			data.Pprof = append(data.Pprof, PprofPair{
+				uint64(nowUnix) * 1000,
+				u.Block,
+				u.Goroutine,
+				u.Heap,
+				u.Mutex,
+				u.Threadcreate,
+			})
 
 			cpuTimes, err := myProcess.Times()
 			if err != nil {
@@ -108,9 +137,9 @@ func (s *server) gatherData() {
 			}
 
 			if prevUserTime != 0 {
-				u.CpuUser = cpuTimes.User - prevUserTime
-				u.CpuSys = cpuTimes.System - prevSysTime
-				data.CpuUsage = append(data.CpuUsage, CPUPair{uint64(nowUnix) * 1000, u.CpuUser, u.CpuSys})
+				u.CPUUser = cpuTimes.User - prevUserTime
+				u.CPUSys = cpuTimes.System - prevSysTime
+				data.CPUUsage = append(data.CPUUsage, CPUPair{uint64(nowUnix) * 1000, u.CPUUser, u.CPUSys})
 			}
 
 			prevUserTime = cpuTimes.User
@@ -157,17 +186,8 @@ func init() {
 	// when maxCount is large
 	data.BytesAllocated = make([]SimplePair, 0, maxCount)
 	data.GcPauses = make([]SimplePair, 0, maxCount)
-	data.CpuUsage = make([]CPUPair, 0, maxCount)
-
-	/* Prepare some data for testing
-	num := int64(100)
-	for i := int64(0); i < num; i++ {
-		ts := (time.Now().Unix() - (num - i)) * 1000
-		data.BytesAllocated = append(data.BytesAllocated, SimplePair{uint64(ts), rand.Uint64()})
-		data.GcPauses = append(data.GcPauses, SimplePair{uint64(ts), rand.Uint64()})
-		data.CpuUsage = append(data.CpuUsage, CPUPair{uint64(ts), rand.Float64(), rand.Float64()})
-	}
-	*/
+	data.CPUUsage = make([]CPUPair, 0, maxCount)
+	data.Pprof = make([]PprofPair, 0, maxCount)
 
 	go s.gatherData()
 }
@@ -185,19 +205,19 @@ func (s *server) removeConsumer(id uint) {
 	s.consumersMutex.Lock()
 	defer s.consumersMutex.Unlock()
 
-	var consumerId uint
+	var consumerID uint
 	var consumerFound bool
 
 	for i, c := range s.consumers {
 		if c.id == id {
 			consumerFound = true
-			consumerId = uint(i)
+			consumerID = uint(i)
 			break
 		}
 	}
 
 	if consumerFound {
-		s.consumers = append(s.consumers[:consumerId], s.consumers[consumerId+1:]...)
+		s.consumers = append(s.consumers[:consumerID], s.consumers[consumerID+1:]...)
 	}
 }
 
@@ -205,10 +225,10 @@ func (s *server) addConsumer() consumer {
 	s.consumersMutex.Lock()
 	defer s.consumersMutex.Unlock()
 
-	lastConsumerId += 1
+	lastConsumerID++
 
 	c := consumer{
-		id: lastConsumerId,
+		id: lastConsumerID,
 		c:  make(chan update),
 	}
 
@@ -255,7 +275,7 @@ func (s *server) dataFeedHandler(w http.ResponseWriter, r *http.Request) {
 
 	for u := range c.c {
 		websocket.WriteJSON(conn, u)
-		i += 1
+		i++
 
 		if i%10 == 0 {
 			if diff := lastPing.Sub(lastPong); diff > time.Second*60 {
