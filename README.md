@@ -29,3 +29,8 @@ package main
 import _ "github.com/mkevac/debugcharts"
 ```
 If you want to use debugcharts, then build your project with `-tags debugcharts`
+
+Development
+-----------
+
+I use [bindata](https://github.com/kevinburke/go-bindata) to pack binary files into executable. Run make to rebuild.
