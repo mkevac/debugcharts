@@ -29,9 +29,10 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/mkevac/debugcharts/bindata"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/process"
+
+	"github.com/mkevac/debugcharts/bindata"
 )
 
 type update struct {
@@ -97,6 +98,9 @@ var (
 	upgrader       = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
 	}
 	prevSysTime  float64
 	prevUserTime float64
