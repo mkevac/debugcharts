@@ -10,7 +10,7 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/gorilla/handlers"
-	_ "github.com/mkevac/debugcharts"
+	_ "github.com/Monibuca/debugcharts"
 )
 
 func dummyCPUUsage() {

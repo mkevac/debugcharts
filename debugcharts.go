@@ -29,9 +29,9 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/mkevac/debugcharts/bindata"
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/process"
+	"github.com/Monibuca/debugcharts/bindata"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 type update struct {
